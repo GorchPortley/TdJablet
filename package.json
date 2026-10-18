@@ -1,0 +1,14 @@
+{
+  "name": "tdjablet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A CDJ-style DJ player for tablets, with a touch-first replacement for the jog wheel.",
+  "type": "module",
+  "scripts": {
+    "serve": "npx --yes http-server -c-1 -p 8080 .",
+    "test": "node --test \"tests/unit/*.test.mjs\"",
+    "e2e": "node tests/e2e/run.mjs",
+    "fetch-ffmpeg": "sh tools/fetch-ffmpeg.sh"
+  },
+  "license": "MIT"
+}
