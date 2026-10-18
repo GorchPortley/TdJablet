@@ -236,3 +236,14 @@ test('stops at the end of the track', () => {
   assert.equal(d.ended, true);
   assert.equal(d.pos, d.length);
 });
+
+test('a big phase push still lands within about a second', () => {
+  const d = new DeckCore(SR);
+  loadDeck(d, sine(440, 10));
+  d.command({ cmd: 'play' });
+  renderSeconds(d, 0.2);
+  d.command({ cmd: 'push', frames: 0.4 * SR });
+  renderSeconds(d, 1.25);
+  assert.equal(d.push, 0);
+  assert.ok(Math.abs(d.pos - (1.45 * SR + 0.4 * SR)) < 1, `pos ${d.pos}`);
+});

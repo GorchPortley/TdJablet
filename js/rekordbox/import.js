@@ -124,11 +124,16 @@ export function classifyFiles(files) {
   for (const f of files) {
     const rel = f.webkitRelativePath || '';
     if (!rel || !rel.startsWith(out.usbRoot)) continue;
-    out.byUsbPath.set(('/' + rel.slice(out.usbRoot.length)).toLowerCase(), f);
+    out.byUsbPath.set(pathKey('/' + rel.slice(out.usbRoot.length)), f);
   }
   return out;
 }
 
+/** Case- and Unicode-insensitive key for paths and names (Mac sticks often store decomposed accents). */
+export function pathKey(p) {
+  return (p || '').normalize('NFC').toLowerCase();
+}
+
 export function matchKey(name, size) {
-  return `${(name || '').toLowerCase()}|${size || 0}`;
+  return `${pathKey(name)}|${size || 0}`;
 }

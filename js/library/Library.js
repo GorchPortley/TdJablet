@@ -6,7 +6,7 @@
 // given the file yet). Adding files later re-links them by name and size.
 
 import { readTags } from '../decode/tags.js';
-import { recordsFromUsb, recordsFromXml, classifyFiles, matchKey } from '../rekordbox/import.js';
+import { recordsFromUsb, recordsFromXml, classifyFiles, matchKey, pathKey } from '../rekordbox/import.js';
 
 let idCounter = 0;
 function newId(prefix) {
@@ -43,7 +43,7 @@ export class Library extends EventTarget {
   _index(t) {
     if (!t.fileName) return;
     this.byKey.set(matchKey(t.fileName, t.fileSize), t.id);
-    const n = t.fileName.toLowerCase();
+    const n = pathKey(t.fileName);
     if (!this.byName.has(n)) this.byName.set(n, []);
     const list = this.byName.get(n);
     if (!list.includes(t.id)) list.push(t.id);
@@ -57,7 +57,7 @@ export class Library extends EventTarget {
     const id = this.byKey.get(matchKey(name, size));
     if (id) return this.tracks.get(id);
     // Same name and either size unknown on one side or a single candidate.
-    const list = this.byName.get((name || '').toLowerCase()) || [];
+    const list = this.byName.get(pathKey(name)) || [];
     const cands = list.map((i) => this.tracks.get(i)).filter((t) => t && (!size || !t.fileSize || t.fileSize === size));
     return cands.length === 1 ? cands[0] : null;
   }
@@ -90,7 +90,7 @@ export class Library extends EventTarget {
       onProgress('Reading rekordbox USB export…');
       try {
         const read = async (path) => {
-          const f = c.byUsbPath.get(path.toLowerCase());
+          const f = c.byUsbPath.get(pathKey(path));
           return f ? f.arrayBuffer() : null;
         };
         const { records, playlists } = await recordsFromUsb(await c.pdb.arrayBuffer(), read);
@@ -99,12 +99,13 @@ export class Library extends EventTarget {
         for (const rec of records) {
           const id = this._merge(rec, dirty, report);
           idMap.set(rec.rbId, id);
-          const f = c.byUsbPath.get((rec.filePath || '').toLowerCase());
+          const f = c.byUsbPath.get(pathKey(rec.filePath));
           if (f) {
             consumed.add(f);
             onProgress(`Importing ${++i}/${records.length}: ${rec.title}`);
             await this._attach(this.tracks.get(id), f, persist, report);
           }
+          if (dirty.size >= 100) await this._save(dirty);
         }
         report.playlists += await this._replacePlaylists('rekordbox-usb', playlists, idMap);
       } catch (e) {
@@ -151,6 +152,7 @@ export class Library extends EventTarget {
         }
         dirty.add(t.id);
         await this._attach(t, f, persist, report);
+        if (dirty.size >= 100) await this._save(dirty);
       } catch (e) {
         report.failed.push(`${f.name}: ${e.message}`);
       }
@@ -231,6 +233,7 @@ export class Library extends EventTarget {
       if (t) entries.push([id, t]);
     }
     if (entries.length) await this.store.putMany('tracks', entries);
+    ids.clear();
   }
 
   // ------------------------------------------------------------ access

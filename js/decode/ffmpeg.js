@@ -10,6 +10,11 @@ let loading = null;
 
 export async function ffmpegAvailable() {
   try {
+    if (self.caches && (await caches.match(new URL('core/ffmpeg-core.wasm', BASE).href))) return true;
+  } catch {
+    /* no Cache API */
+  }
+  try {
     const r = await fetch(new URL('core/ffmpeg-core.js', BASE), { method: 'HEAD' });
     return r.ok;
   } catch {

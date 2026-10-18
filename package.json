@@ -9,6 +9,5 @@
     "test": "node --test \"tests/unit/*.test.mjs\"",
     "e2e": "node tests/e2e/run.mjs",
     "fetch-ffmpeg": "sh tools/fetch-ffmpeg.sh"
-  },
-  "license": "MIT"
+  }
 }

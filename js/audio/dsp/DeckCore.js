@@ -300,8 +300,12 @@ export class DeckCore {
     let corr = 0;
     if (this.playing && !this.scratching) {
       if (this.push !== 0) {
-        const lim = 0.12 * Math.max(0.25, Math.abs(m1));
+        // Small pushes glide gently (<= ~12 % bend); big ones are allowed to bend
+        // harder so the deck still gets there in about a second, like spinning a
+        // jog wheel faster.
+        const lim = Math.min(0.5, 0.12 + (2 * Math.abs(this.push)) / sr) * Math.max(0.25, Math.abs(m1));
         let c = clamp(this.push / (0.08 * sr), -lim, lim);
+        if (Math.abs(c) < 0.03) c = this.push > 0 ? 0.03 : -0.03; // finish the tail instead of creeping
         if (Math.abs(c * n) >= Math.abs(this.push)) {
           c = this.push / n;
           this.push = 0;
